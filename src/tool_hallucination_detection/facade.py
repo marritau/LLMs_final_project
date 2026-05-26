@@ -42,7 +42,7 @@ def prepare_dataset(
     cache_path = Path(cache_dir) if cache_dir else None
     if cache_path and not quick:
         cached = _try_read_cached_splits(cache_path)
-        if cached is not None:
+        if cached is not None and not _is_synthetic_dataset(cached):
             return cached
 
     if allow_synthetic_fallback is None:
@@ -206,6 +206,13 @@ def _try_read_cached_splits(cache_path: Path) -> dict[str, list[dict[str, Any]]]
     if not all(path.exists() for path in paths.values()):
         return None
     return {split: read_jsonl(path) for split, path in paths.items()}
+
+
+def _is_synthetic_dataset(dataset: Mapping[str, list[dict[str, Any]]]) -> bool:
+    records = flatten_splits(dataset)
+    if not records:
+        return False
+    return all(str(record.get("source_id", "")).startswith("synthetic-") for record in records)
 
 
 def _non_empty_split(dataset: Mapping[str, list[dict[str, Any]]], split: str) -> list[dict[str, Any]]:
