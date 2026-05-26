@@ -87,14 +87,15 @@ def train_token_classifier(
         batch_size=batch_size,
         epochs=epochs,
     ))
-    trainer = Trainer(
+    trainer = Trainer(**_trainer_kwargs(
+        Trainer=Trainer,
         model=model,
         args=args,
         train_dataset=train_dataset,
         eval_dataset=validation_dataset,
         tokenizer=tokenizer,
         data_collator=DataCollatorForTokenClassification(tokenizer),
-    )
+    ))
     trainer.train()
     trainer.save_model(str(output_dir))
     tokenizer.save_pretrained(str(output_dir))
@@ -129,6 +130,32 @@ def _training_args_kwargs(
     else:
         kwargs["evaluation_strategy"] = "epoch"
     return {key: value for key, value in kwargs.items() if key in signature.parameters}
+
+
+def _trainer_kwargs(
+    Trainer: Any,
+    model: Any,
+    args: Any,
+    train_dataset: Any,
+    eval_dataset: Any,
+    tokenizer: Any,
+    data_collator: Any,
+) -> dict[str, Any]:
+    """Build Trainer kwargs across transformers versions."""
+
+    signature = inspect.signature(Trainer.__init__)
+    kwargs: dict[str, Any] = {
+        "model": model,
+        "args": args,
+        "train_dataset": train_dataset,
+        "eval_dataset": eval_dataset,
+        "data_collator": data_collator,
+    }
+    if "processing_class" in signature.parameters:
+        kwargs["processing_class"] = tokenizer
+    elif "tokenizer" in signature.parameters:
+        kwargs["tokenizer"] = tokenizer
+    return kwargs
 
 
 def predict_with_token_classifier(
