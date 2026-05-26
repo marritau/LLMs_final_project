@@ -31,7 +31,7 @@ def prepare_dataset(
     seed: int = 42,
     cache_dir: str | Path | None = "data/processed",
     max_base_records: int | None = None,
-    allow_synthetic_fallback: bool = True,
+    allow_synthetic_fallback: bool | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Prepare clean/corrupted RAGTruth-style records.
 
@@ -44,6 +44,9 @@ def prepare_dataset(
         cached = _try_read_cached_splits(cache_path)
         if cached is not None:
             return cached
+
+    if allow_synthetic_fallback is None:
+        allow_synthetic_fallback = quick
 
     if quick:
         base_records = synthetic_toolace_records()
@@ -155,8 +158,9 @@ def evaluate_experiment(
     quick: bool = False,
     model_path: str | Path | None = None,
     seed: int = 42,
+    max_base_records: int | None = None,
 ) -> dict[str, Any]:
-    dataset = prepare_dataset(quick=quick, seed=seed)
+    dataset = prepare_dataset(quick=quick, seed=seed, max_base_records=max_base_records)
     test_records = _non_empty_split(dataset, "test")
     validation_records = _non_empty_split(dataset, "validation")
 

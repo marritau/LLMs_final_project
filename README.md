@@ -57,7 +57,9 @@ result["span_metrics"]
 ```
 
 Use `quick=False` for the full ToolACE run. The full run downloads public
-datasets/models and is expected to run on a Colab GPU.
+datasets/models and is expected to run on a Colab GPU. If ToolACE cannot be
+downloaded, the full run raises the original error instead of silently reporting
+quick synthetic metrics.
 
 ## Public API
 
