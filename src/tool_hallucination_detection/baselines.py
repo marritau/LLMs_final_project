@@ -85,8 +85,8 @@ def nli_sentence_verifier_predict(
         for start, end, sentence in _iter_sentence_spans(str(record["output"])):
             if not sentence.strip():
                 continue
-            result = classifier({"text": context, "text_pair": sentence})[0]
-            label_scores = {item["label"].lower(): float(item["score"]) for item in result}
+            result = classifier({"text": context, "text_pair": sentence})
+            label_scores = _normalize_pipeline_scores(result)
             contradiction = max(
                 [score for label, score in label_scores.items() if "contradiction" in label],
                 default=0.0,
@@ -350,6 +350,29 @@ def _span(start: int, end: int, text: str, confidence: float, method: str) -> di
         "confidence": float(confidence),
         "label_type": method,
     }
+
+
+def _normalize_pipeline_scores(result: Any) -> dict[str, float]:
+    """Normalize transformers pipeline outputs across versions.
+
+    Depending on `transformers` version and `top_k`, a text-classification
+    pipeline may return a dict, a list of dicts, or a nested list for batched
+    inputs. We only need a label-to-score mapping.
+    """
+
+    items: list[Mapping[str, Any]] = []
+
+    def collect(value: Any) -> None:
+        if isinstance(value, Mapping):
+            if "label" in value and "score" in value:
+                items.append(value)
+            return
+        if isinstance(value, list):
+            for nested in value:
+                collect(nested)
+
+    collect(result)
+    return {str(item["label"]).lower(): float(item["score"]) for item in items}
 
 
 def _get_field(item: Any, name: str, default: Any = None) -> Any:
