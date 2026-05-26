@@ -11,4 +11,5 @@ def test_evaluate_experiment_quick_runs():
     result = evaluate_experiment(quick=True)
     assert "sentence_metrics" in result
     assert "span_metrics" in result
+    assert "training_error" in result
     assert len(result["test_records"]) > 0

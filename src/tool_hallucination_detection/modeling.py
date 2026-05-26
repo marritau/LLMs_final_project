@@ -7,6 +7,7 @@ the repository remains usable for quick offline checks.
 from __future__ import annotations
 
 from pathlib import Path
+import inspect
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -80,20 +81,12 @@ def train_token_classifier(
 
     model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=2)
     output_dir = Path(output_dir)
-    args = TrainingArguments(
-        output_dir=str(output_dir),
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
-        num_train_epochs=epochs,
-        learning_rate=2e-5,
-        weight_decay=0.01,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        logging_steps=20,
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
-        report_to=[],
-    )
+    args = TrainingArguments(**_training_args_kwargs(
+        TrainingArguments=TrainingArguments,
+        output_dir=output_dir,
+        batch_size=batch_size,
+        epochs=epochs,
+    ))
     trainer = Trainer(
         model=model,
         args=args,
@@ -106,6 +99,36 @@ def train_token_classifier(
     trainer.save_model(str(output_dir))
     tokenizer.save_pretrained(str(output_dir))
     return output_dir
+
+
+def _training_args_kwargs(
+    TrainingArguments: Any,
+    output_dir: Path,
+    batch_size: int,
+    epochs: float,
+) -> dict[str, Any]:
+    """Build TrainingArguments kwargs across transformers versions."""
+
+    signature = inspect.signature(TrainingArguments.__init__)
+    kwargs: dict[str, Any] = {
+        "output_dir": str(output_dir),
+        "per_device_train_batch_size": batch_size,
+        "per_device_eval_batch_size": batch_size,
+        "num_train_epochs": epochs,
+        "learning_rate": 2e-5,
+        "weight_decay": 0.01,
+        "save_strategy": "epoch",
+        "logging_steps": 20,
+        "load_best_model_at_end": True,
+        "metric_for_best_model": "eval_loss",
+        "report_to": [],
+        "remove_unused_columns": False,
+    }
+    if "eval_strategy" in signature.parameters:
+        kwargs["eval_strategy"] = "epoch"
+    else:
+        kwargs["evaluation_strategy"] = "epoch"
+    return {key: value for key, value in kwargs.items() if key in signature.parameters}
 
 
 def predict_with_token_classifier(

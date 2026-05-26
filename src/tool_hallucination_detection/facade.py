@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import warnings
 from typing import Any, Mapping, Sequence
 
 from .baselines import (
@@ -116,6 +117,7 @@ def train_best_model(
     quick: bool = False,
     dataset: dict[str, list[dict[str, Any]]] | None = None,
     output_dir: str | Path = "artifacts/modernbert-token-classifier",
+    strict: bool = False,
 ) -> ImprovedEnsembleDetector | Path:
     """Train the best available detector.
 
@@ -137,8 +139,18 @@ def train_best_model(
             validation_records=validation_records,
             output_dir=output_dir,
         )
-    except Exception:
-        return ImprovedEnsembleDetector().fit(validation_records)
+    except Exception as exc:
+        if strict:
+            raise
+        detector = ImprovedEnsembleDetector().fit(validation_records)
+        setattr(detector, "training_error", repr(exc))
+        warnings.warn(
+            "Token-classifier training failed; falling back to the lightweight ensemble. "
+            f"Original error: {exc!r}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return detector
 
 
 def predict_spans(
@@ -159,6 +171,7 @@ def evaluate_experiment(
     model_path: str | Path | None = None,
     seed: int = 42,
     max_base_records: int | None = None,
+    strict_training: bool = False,
 ) -> dict[str, Any]:
     dataset = prepare_dataset(quick=quick, seed=seed, max_base_records=max_base_records)
     test_records = _non_empty_split(dataset, "test")
@@ -171,7 +184,7 @@ def evaluate_experiment(
         detector_or_path = Path(model_path)
         improved_threshold = 0.5
     else:
-        detector_or_path = train_best_model(quick=quick, dataset=dataset)
+        detector_or_path = train_best_model(quick=quick, dataset=dataset, strict=strict_training)
         improved_threshold = detector_or_path.threshold if isinstance(detector_or_path, ImprovedEnsembleDetector) else 0.5
 
     improved_predictions = predict_spans(test_records, detector_or_path)
@@ -198,6 +211,7 @@ def evaluate_experiment(
         "all_metrics": _to_table(rows),
         "predictions": {"improved": improved_predictions, **baseline_result["predictions"]},
         "validation_summary": validation_summary,
+        "training_error": getattr(detector_or_path, "training_error", None),
     }
 
 
