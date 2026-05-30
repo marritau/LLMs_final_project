@@ -6,8 +6,8 @@ dialogues and compares trivial, lexical, NLI, LettuceDetect, LookBackLens-style,
 ModernBERT, and hybrid neural-symbolic detectors.
 
 The current source of truth for the executed assignment run is
-`Urazmetova_final_project (1) (1).ipynb`; the reusable implementation is mirrored
-in `src/tool_hallucination_detection`.
+`Urazmetova_final_project.ipynb`; the reusable implementation is mirrored in
+`src/tool_hallucination_detection`.
 
 ## Project Idea
 
@@ -65,12 +65,24 @@ Equivalent commands:
 
 ```bash
 pip install -q -r requirements-kaggle.txt
-python scripts/01_build_dataset.py --config configs/kaggle_full.yaml
-python scripts/02_run_baselines.py --config configs/kaggle_full.yaml
-python scripts/03_train_modernbert.py --config configs/kaggle_full.yaml
-python scripts/04_evaluate.py --config configs/kaggle_full.yaml
-python scripts/06_make_report_tables.py --config configs/kaggle_full.yaml
+python -m py_compile src/tool_hallucination_detection/*.py
+python -m pytest -q
+
+python scripts/01_build_dataset.py --config configs/kaggle_small.yaml
+python scripts/02_run_baselines.py --config configs/kaggle_small.yaml
+python scripts/03_train_modernbert.py --config configs/kaggle_small.yaml
+python scripts/04_evaluate.py \
+  --config configs/kaggle_small.yaml \
+  --model-path /kaggle/working/artifacts/kaggle_small/modernbert-token-classifier
+python scripts/06_make_report_tables.py --config configs/kaggle_small.yaml
 ```
+
+After the small run succeeds, switch `kaggle_small.yaml` to `kaggle_full.yaml`
+and use `/kaggle/working/artifacts/kaggle_full/modernbert-token-classifier` as
+the evaluation model path. Running `03_train_modernbert.py` and then
+`04_evaluate.py` without `--model-path` can retrain the model if no saved model
+is found at `training.output_dir`, so the explicit `--model-path` form is the
+recommended Kaggle workflow.
 
 Kaggle outputs are written to:
 
