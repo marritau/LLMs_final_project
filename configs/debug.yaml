@@ -1,0 +1,37 @@
+name: debug
+quick: true
+
+dataset:
+  seed: 42
+  max_base_records: 50
+  include_clean_hard: true
+  cache_dir: artifacts/debug/dataset
+  allow_synthetic_fallback: true
+
+training:
+  model_name: answerdotai/ModernBERT-base
+  output_dir: artifacts/debug/modernbert-token-classifier
+  epochs: 1
+  batch_size: 2
+  gradient_accumulation_steps: 1
+  max_length: 1024
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.06
+  fp16: false
+  early_stopping_patience: 2
+  gradient_checkpointing: false
+  use_class_weights: true
+  strict: false
+
+evaluation:
+  include_attention_lookback: false
+  include_lettucedetect_fallback: false
+  require_real_lettucedetect: false
+  require_attention_lookback: false
+  threshold_metric: macro_f1
+  score_aggregator: max_token_prob
+
+outputs:
+  artifacts_dir: artifacts/debug
+  results_dir: results/debug

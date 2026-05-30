@@ -1,0 +1,41 @@
+name: kaggle_small
+quick: false
+
+dataset:
+  seed: 42
+  max_base_records: 200
+  include_clean_hard: true
+  cache_dir: /kaggle/working/artifacts/kaggle_small/dataset
+  allow_synthetic_fallback: false
+
+training:
+  model_name: answerdotai/ModernBERT-base
+  output_dir: /kaggle/working/artifacts/kaggle_small/modernbert-token-classifier
+  epochs: 1
+  batch_size: 2
+  gradient_accumulation_steps: 2
+  max_length: 2048
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.06
+  fp16: true
+  early_stopping_patience: 2
+  gradient_checkpointing: true
+  use_class_weights: true
+  strict: true
+
+evaluation:
+  include_attention_lookback: true
+  attention_lookback_model_name: distilgpt2
+  attention_lookback_train_limit: 240
+  attention_lookback_max_length: 384
+  attention_lookback_max_answer_tokens: 96
+  include_lettucedetect_fallback: false
+  require_real_lettucedetect: false
+  require_attention_lookback: false
+  threshold_metric: macro_f1
+  score_aggregator: max_token_prob
+
+outputs:
+  artifacts_dir: /kaggle/working/artifacts/kaggle_small
+  results_dir: /kaggle/working/results/kaggle_small

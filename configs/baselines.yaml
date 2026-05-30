@@ -1,0 +1,18 @@
+enabled:
+  - always_clean
+  - always_hallucinated
+  - random_balanced
+  - random_prior
+  - keyword_tool_action
+  - tfidf_logreg
+  - value_checker
+  - nli_sentence_verifier
+  - lettucedetect_real
+  - lookback_lens_style_proxy
+  - attention_lookback_lens_adapted
+
+external:
+  include_lettucedetect_fallback: false
+  require_real_lettucedetect: false
+  include_attention_lookback: true
+  require_attention_lookback: false

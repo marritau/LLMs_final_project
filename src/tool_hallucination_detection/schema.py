@@ -1,9 +1,4 @@
-"""Shared record and label helpers.
-
-The project uses dictionaries for easy JSONL export, but these helpers keep the
-RAGTruth-style span contract explicit and testable.
-"""
-
+"""Shared record and label helpers for RAGTruth-style span annotations."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -37,7 +32,9 @@ class HallucinationRecord:
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
-        data["labels"] = [label.to_dict() for label in self.labels]
+        labels = [label.to_dict() for label in self.labels]
+        data["labels"] = labels
+        data["hallucination_labels"] = labels
         return data
 
 
@@ -63,7 +60,6 @@ def sentence_label(record: Mapping[str, Any]) -> int:
 
 def validate_labels(record: Mapping[str, Any]) -> None:
     """Validate non-empty, non-overlapping spans and exact text offsets."""
-
     output = str(record.get("output", ""))
     labels = sorted(coerce_labels(record.get("labels")), key=lambda item: item.start)
     previous_end = -1

@@ -1,0 +1,12 @@
+model_name: answerdotai/ModernBERT-base
+epochs_grid: [1, 3, 5]
+learning_rates: [2.0e-5, 1.0e-5]
+batch_size: 2
+gradient_accumulation_steps: 2
+max_lengths: [1024, 2048, 4096]
+weight_decay: 0.01
+warmup_ratio: 0.06
+fp16: true
+early_stopping_patience: 2
+gradient_checkpointing: true
+use_class_weights: true

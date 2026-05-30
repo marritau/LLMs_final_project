@@ -1,5 +1,4 @@
 """ToolACE loading, normalization, splitting, and JSONL export."""
-
 from __future__ import annotations
 
 import json
@@ -12,12 +11,7 @@ from .schema import validate_labels
 
 
 def load_toolace_rows(split: str = "train", max_records: int | None = None) -> list[dict[str, Any]]:
-    """Load raw ToolACE rows from Hugging Face.
-
-    The dependency is imported lazily so the offline quick tests can run without
-    network access or Hugging Face credentials.
-    """
-
+    """Load raw ToolACE rows from Hugging Face."""
     try:
         from datasets import load_dataset
     except ImportError as exc:
@@ -30,13 +24,7 @@ def load_toolace_rows(split: str = "train", max_records: int | None = None) -> l
 
 
 def normalize_toolace_row(row: Mapping[str, Any], row_index: int | str) -> dict[str, Any] | None:
-    """Convert one ToolACE row into the project record shape.
-
-    ToolACE rows contain a system prompt and a list of conversation turns. We
-    keep the complete system prompt as the available-tool description because it
-    is the most faithful source of tool names and schemas.
-    """
-
+    """Convert one ToolACE row into the project record shape."""
     conversations = list(row.get("conversations") or [])
     if not conversations:
         return None
@@ -99,7 +87,6 @@ def split_by_source_id(
     validation_ratio: float = 0.15,
 ) -> dict[str, list[dict[str, Any]]]:
     """Split records while keeping variants of the same source together."""
-
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
         grouped[str(record["source_id"])].append(record)
@@ -114,6 +101,7 @@ def split_by_source_id(
     if n_total >= 3:
         n_validation = max(1, n_validation)
         n_train = min(max(1, n_train), n_total - n_validation - 1)
+
     train_ids = set(source_ids[:n_train])
     validation_ids = set(source_ids[n_train : n_train + n_validation])
 
@@ -132,18 +120,33 @@ def flatten_splits(splits: Mapping[str, list[dict[str, Any]]]) -> list[dict[str,
 
 
 def write_jsonl(records: Iterable[Mapping[str, Any]], path: str | Path) -> Path:
+    """Write records with both internal `labels` and assignment-facing `hallucination_labels`.
+
+    The code uses `labels` internally for brevity, while the project PDF names the
+    RAGTruth-style field `hallucination_labels`. Keeping both fields makes the
+    exported JSONL unambiguous for grading and Hugging Face publication.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as file:
         for record in records:
-            validate_labels(record)
-            file.write(json.dumps(record, ensure_ascii=False) + "\n")
+            output_record = _with_hallucination_label_alias(record)
+            validate_labels(output_record)
+            file.write(json.dumps(output_record, ensure_ascii=False) + "\n")
     return path
 
 
 def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     with Path(path).open("r", encoding="utf-8") as file:
-        return [json.loads(line) for line in file if line.strip()]
+        return [_with_hallucination_label_alias(json.loads(line)) for line in file if line.strip()]
+
+
+def _with_hallucination_label_alias(record: Mapping[str, Any]) -> dict[str, Any]:
+    data = dict(record)
+    labels = list(data.get("labels") or data.get("hallucination_labels") or [])
+    data["labels"] = labels
+    data["hallucination_labels"] = labels
+    return data
 
 
 def _clean_text(value: Any) -> str:
@@ -159,8 +162,7 @@ def _turn_value(turn: Mapping[str, Any]) -> Any:
 
 
 def synthetic_toolace_records() -> list[dict[str, Any]]:
-    """Small offline sample used by tests and quick notebook smoke runs."""
-
+    """Small offline sample used by quick smoke runs."""
     return [
         {
             "id": "synthetic-weather",
