@@ -32,6 +32,7 @@ evaluation:
   attention_lookback_max_answer_tokens: 96
   include_lettucedetect_fallback: false
   require_real_lettucedetect: false
+  # Required by LettuceDetect's transformer backend.
   lettuce_model_path: KRLabsOrg/lettucedect-base-modernbert-en-v1
   require_attention_lookback: false
   threshold_metric: macro_f1

@@ -119,7 +119,8 @@ python scripts/06_make_report_tables.py --config configs/kaggle_full.yaml
 `CUDA_VISIBLE_DEVICES=0` keeps Hugging Face Trainer out of `DataParallel` on
 2x T4 Kaggle sessions. Always pass `--model-path` after running
 `03_train_modernbert.py`; otherwise evaluation may train a second model if no
-saved model is found.
+saved model is found. LettuceDetect is configured through
+`evaluation.lettuce_model_path` in the Kaggle YAML files.
 
 Kaggle outputs are written to:
 

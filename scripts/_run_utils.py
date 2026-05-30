@@ -55,6 +55,7 @@ def baseline_kwargs(config: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "include_lettucedetect_fallback": bool(evaluation.get("include_lettucedetect_fallback", False)),
         "require_real_lettucedetect": bool(evaluation.get("require_real_lettucedetect", False)),
+        # LettuceDetect's transformer backend requires an explicit HF model id.
         "lettuce_model_path": evaluation.get("lettuce_model_path"),
         "include_attention_lookback": bool(evaluation.get("include_attention_lookback", True)),
         "require_attention_lookback": bool(evaluation.get("require_attention_lookback", False)),
