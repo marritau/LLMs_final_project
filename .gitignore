@@ -15,6 +15,11 @@ results/
 outputs/
 models/
 wandb/
+*.zip
+*.safetensors
+*.pt
+*.pth
+*.bin
 course_files_export.zip
 TextDetox*.ipynb
 textdetox_cache/

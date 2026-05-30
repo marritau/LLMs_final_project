@@ -65,24 +65,61 @@ Equivalent commands:
 
 ```bash
 pip install -q -r requirements-kaggle.txt
+pip install -q -e ".[dev]"
 python -m py_compile src/tool_hallucination_detection/*.py
 python -m pytest -q
+python scripts/00_check_lettucedetect.py
+```
 
+Debug smoke run:
+
+```bash
+python scripts/01_build_dataset.py --config configs/debug.yaml
+python scripts/02_run_baselines.py --config configs/debug.yaml
+python scripts/04_evaluate.py --config configs/debug.yaml
+python scripts/06_make_report_tables.py --config configs/debug.yaml
+```
+
+Small GPU run:
+
+```bash
 python scripts/01_build_dataset.py --config configs/kaggle_small.yaml
 python scripts/02_run_baselines.py --config configs/kaggle_small.yaml
-python scripts/03_train_modernbert.py --config configs/kaggle_small.yaml
-python scripts/04_evaluate.py \
+CUDA_VISIBLE_DEVICES=0 python scripts/03_train_modernbert.py --config configs/kaggle_small.yaml
+CUDA_VISIBLE_DEVICES=0 python scripts/04_evaluate.py \
   --config configs/kaggle_small.yaml \
   --model-path /kaggle/working/artifacts/kaggle_small/modernbert-token-classifier
 python scripts/06_make_report_tables.py --config configs/kaggle_small.yaml
 ```
 
-After the small run succeeds, switch `kaggle_small.yaml` to `kaggle_full.yaml`
-and use `/kaggle/working/artifacts/kaggle_full/modernbert-token-classifier` as
-the evaluation model path. Running `03_train_modernbert.py` and then
-`04_evaluate.py` without `--model-path` can retrain the model if no saved model
-is found at `training.output_dir`, so the explicit `--model-path` form is the
-recommended Kaggle workflow.
+Full-safe pipeline check:
+
+```bash
+python scripts/01_build_dataset.py --config configs/kaggle_full_safe.yaml
+python scripts/02_run_baselines.py --config configs/kaggle_full_safe.yaml
+CUDA_VISIBLE_DEVICES=0 python scripts/03_train_modernbert.py --config configs/kaggle_full_safe.yaml
+CUDA_VISIBLE_DEVICES=0 python scripts/04_evaluate.py \
+  --config configs/kaggle_full_safe.yaml \
+  --model-path /kaggle/working/artifacts/kaggle_full/modernbert-token-classifier
+python scripts/06_make_report_tables.py --config configs/kaggle_full_safe.yaml
+```
+
+Final full run:
+
+```bash
+python scripts/01_build_dataset.py --config configs/kaggle_full.yaml
+python scripts/02_run_baselines.py --config configs/kaggle_full.yaml
+CUDA_VISIBLE_DEVICES=0 python scripts/03_train_modernbert.py --config configs/kaggle_full.yaml
+CUDA_VISIBLE_DEVICES=0 python scripts/04_evaluate.py \
+  --config configs/kaggle_full.yaml \
+  --model-path /kaggle/working/artifacts/kaggle_full/modernbert-token-classifier
+python scripts/06_make_report_tables.py --config configs/kaggle_full.yaml
+```
+
+`CUDA_VISIBLE_DEVICES=0` keeps Hugging Face Trainer out of `DataParallel` on
+2x T4 Kaggle sessions. Always pass `--model-path` after running
+`03_train_modernbert.py`; otherwise evaluation may train a second model if no
+saved model is found.
 
 Kaggle outputs are written to:
 
@@ -96,6 +133,7 @@ Kaggle outputs are written to:
 - `configs/debug.yaml`: offline smoke run, 50-record setting, no external models.
 - `configs/kaggle_small.yaml`: ToolACE small run, 200 base records, 1 epoch.
 - `configs/kaggle_full.yaml`: ToolACE full run, 1000 base records, 3 epochs.
+- `configs/kaggle_full_safe.yaml`: full dataset pipeline check that does not fail the run if external LettuceDetect is unavailable.
 - `configs/baselines.yaml`: documented baseline families.
 - `configs/model_modernbert.yaml`: ablation grid for model settings.
 
@@ -157,3 +195,24 @@ The scripts generate:
 
 Use `scripts/06_make_report_tables.py` after a run to refresh dataset and
 corruption audit tables.
+
+## Current Kaggle Small Results
+
+On `kaggle_small.yaml` we evaluated 150 test examples with positive rate 0.6.
+The best method in the current run is `modernbert_token_classifier`:
+
+- sentence macro-F1: 0.772
+- balanced accuracy: 0.792
+- span char-F1: 0.910
+- relaxed span-F1: 0.601
+
+TF-IDF + Logistic Regression is competitive at sentence level but fails at span
+localization. The hardest class is `tool_contradiction`, where ModernBERT recall
+remains low.
+
+## Known Limitations
+
+- `tool_contradiction` remains the hardest type.
+- `hybrid_modernbert_value_checker` currently does not improve span localization.
+- `attention_lookback_lens_adapted` is an approximation, not a full reproduction of LookBack Lens.
+- LettuceDetect requires an explicit `lettuce_model_path`.

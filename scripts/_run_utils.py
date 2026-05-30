@@ -55,6 +55,7 @@ def baseline_kwargs(config: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "include_lettucedetect_fallback": bool(evaluation.get("include_lettucedetect_fallback", False)),
         "require_real_lettucedetect": bool(evaluation.get("require_real_lettucedetect", False)),
+        "lettuce_model_path": evaluation.get("lettuce_model_path"),
         "include_attention_lookback": bool(evaluation.get("include_attention_lookback", True)),
         "require_attention_lookback": bool(evaluation.get("require_attention_lookback", False)),
         "attention_lookback_model_name": evaluation.get("attention_lookback_model_name", "distilgpt2"),
