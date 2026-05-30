@@ -1,0 +1,12 @@
+method,status,details
+always_clean,ok,
+always_hallucinated,ok,
+random_balanced,ok,
+random_prior,ok,
+keyword_tool_action,ok,
+value_checker,ok,
+tfidf_logreg,ok,
+lookback_lens_style_proxy,ok,
+attention_lookback_lens_adapted,attention_adapted,
+nli_sentence_verifier,ok,
+lettucedetect_real,real,

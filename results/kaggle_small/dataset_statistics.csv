@@ -1,0 +1,16 @@
+split,corruption_type,n
+train,clean,139
+train,clean_hard,139
+train,missing_tool,139
+train,overgeneration,139
+train,tool_contradiction,139
+validation,clean,30
+validation,clean_hard,30
+validation,missing_tool,30
+validation,overgeneration,30
+validation,tool_contradiction,30
+test,clean,30
+test,clean_hard,30
+test,missing_tool,30
+test,overgeneration,30
+test,tool_contradiction,30
